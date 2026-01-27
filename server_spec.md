@@ -114,6 +114,15 @@ Endpoints:
 If enabled, the server exposes OpenAI-compatible endpoints at:
 - `/v1beta/openai/*` mapped to `/v1/*`
 
+### 3.5 OpenAPI specification
+The server provides an OpenAPI 3.0 document for tooling and docs:
+- `GET /openapi.json`
+- `GET /openapi.yaml`
+
+### 3.6 Playground
+The server exposes a streaming playground:
+- `GET /playground` (custom streaming UI)
+
 ----------------------------------------------------------------------
 
 ## 4. Models and behaviors

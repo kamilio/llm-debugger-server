@@ -3,6 +3,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import yaml from 'js-yaml';
 import { setTimeout as delay } from 'node:timers/promises';
 import { buildServerConfig } from './server-config.js';
 import { resolveResponse } from './behavior.js';
@@ -20,6 +21,8 @@ import {
 } from './translator.js';
 import { parseMultipart } from './multipart.js';
 import { FileStore } from './file-store.js';
+import { buildOpenApiSpec } from './openapi.js';
+import { buildPlaygroundHtml } from './ui.js';
 import {
     extractAnthropicText,
     extractGeminiText,
@@ -94,6 +97,9 @@ const GEMINI_COUNT_FIELDS = new Set(['contents', 'generateContentRequest']);
 export function createServer(config, { onListen } = {}) {
     const app = express();
     const fileStore = new FileStore();
+    const openApiSpec = buildOpenApiSpec(config);
+    const openApiYaml = yaml.dump(openApiSpec, { noRefs: true });
+    const playgroundHtml = buildPlaygroundHtml();
 
     app.use(cors({ origin: '*' }));
     app.use(express.json({ limit: '2mb' }));
@@ -127,6 +133,25 @@ export function createServer(config, { onListen } = {}) {
         return next();
     });
 
+    app.get('/', (req, res) => {
+        res.json({
+            name: 'LLM Debugger Server',
+            endpoints: listEndpoints(config),
+        });
+    });
+
+    app.get('/playground', (req, res) => {
+        res.type('html').send(playgroundHtml);
+    });
+
+    app.get('/openapi.json', (req, res) => {
+        res.json(openApiSpec);
+    });
+
+    app.get('/openapi.yaml', (req, res) => {
+        res.type('application/yaml').send(openApiYaml);
+    });
+
     app.get('/health', (req, res) => {
         res.json({ status: 'ok' });
     });
@@ -142,6 +167,8 @@ export function createServer(config, { onListen } = {}) {
   <h1>LLM Debugger Server</h1>
   <p>Server is running on ${config.host}:${config.port}</p>
   <ul>
+    <li>Playground: <code>/playground</code></li>
+    <li>OpenAPI: <code>/openapi.json</code> or <code>/openapi.yaml</code></li>
     <li>Health: <code>/health</code></li>
     <li>OpenAI: <code>/v1</code></li>
     <li>Anthropic: <code>/v1</code> with <code>x-provider: anthropic</code></li>
@@ -357,6 +384,73 @@ export function createServer(config, { onListen } = {}) {
     });
 
     return server;
+}
+
+function listEndpoints(config) {
+    const endpoints = {
+        core: [
+            'GET /',
+            'GET /playground',
+            'GET /openapi.json',
+            'GET /openapi.yaml',
+            'GET /health',
+            'GET /__viewer__',
+        ],
+        openai: [
+            'GET /v1/models',
+            'GET /v1/models/:model',
+            'POST /v1/chat/completions',
+            'POST /v1/completions',
+            'POST /v1/embeddings',
+            'POST /v1/responses',
+            'POST /v1/audio/transcriptions',
+            'POST /v1/audio/translations',
+            'POST /v1/images/generations',
+            'POST /v1/images/edits',
+            'POST /v1/images/variations',
+            'POST /v1/moderations',
+            'POST /v1/files',
+            'GET /v1/files',
+            'GET /v1/files/:fileId',
+            'DELETE /v1/files/:fileId',
+        ],
+        anthropic: [
+            'POST /v1/messages',
+            'POST /v1/messages/count_tokens',
+            'GET /v1/models (x-provider: anthropic)',
+            'GET /v1/models/:model (x-provider: anthropic)',
+        ],
+        gemini: [
+            'GET /v1beta/models',
+            'GET /v1beta/models/:model',
+            'POST /v1beta/models/:model:generateContent',
+            'POST /v1beta/models/:model:streamGenerateContent',
+            'POST /v1beta/models/:model:countTokens',
+        ],
+    };
+
+    if (config.enableGeminiOpenAiCompat) {
+        endpoints.geminiOpenAiCompat = [
+            'GET /v1beta/openai/models',
+            'GET /v1beta/openai/models/:model',
+            'POST /v1beta/openai/chat/completions',
+            'POST /v1beta/openai/completions',
+            'POST /v1beta/openai/embeddings',
+            'POST /v1beta/openai/responses',
+            'POST /v1beta/openai/audio/transcriptions',
+            'POST /v1beta/openai/audio/translations',
+            'POST /v1beta/openai/images/generations',
+            'POST /v1beta/openai/images/edits',
+            'POST /v1beta/openai/images/variations',
+            'POST /v1beta/openai/moderations',
+            'POST /v1beta/openai/files',
+            'GET /v1beta/openai/files',
+            'GET /v1beta/openai/files/:fileId',
+            'DELETE /v1beta/openai/files/:fileId',
+        ];
+    }
+
+    return endpoints;
 }
 
 async function handleOpenAIChat({ req, res, config }) {
