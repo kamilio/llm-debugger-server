@@ -284,8 +284,9 @@ function buildToolCallsFromRequest({ requestBody, headers, userInput }) {
 
     const toolChoice = requestBody?.tool_choice || requestBody?.toolChoice;
     const tools = requestBody?.tools || requestBody?.functions;
+    const toolConfig = requestBody?.toolConfig;
 
-    const toolName = resolveToolName(toolChoice, tools);
+    const toolName = resolveToolName(toolChoice, tools, toolConfig);
     if (!toolName) return [];
 
     const args = forcedArgs || { input: userInput || '' };
@@ -298,17 +299,27 @@ function buildToolCallsFromRequest({ requestBody, headers, userInput }) {
     ];
 }
 
-function resolveToolName(toolChoice, tools) {
-    if (toolChoice === 'none') return null;
+function resolveToolName(toolChoice, tools, toolConfig) {
+    if (toolChoice === 'none' || toolChoice?.type === 'none') return null;
     if (toolChoice?.function?.name) return toolChoice.function.name;
+    if (toolChoice?.type === 'tool' && toolChoice?.name) return toolChoice.name;
     if (typeof toolChoice === 'string' && toolChoice !== 'auto' && toolChoice !== 'required') {
         return toolChoice;
+    }
+
+    const allowed = toolConfig?.functionCallingConfig?.allowedFunctionNames;
+    if (Array.isArray(allowed) && allowed.length > 0) {
+        return allowed[0];
     }
 
     if (Array.isArray(tools) && tools.length > 0) {
         const first = tools[0];
         if (first?.function?.name) return first.function.name;
         if (first?.name) return first.name;
+        if (Array.isArray(first?.functionDeclarations) && first.functionDeclarations.length > 0) {
+            const decl = first.functionDeclarations[0];
+            if (decl?.name) return decl.name;
+        }
     }
 
     return null;
