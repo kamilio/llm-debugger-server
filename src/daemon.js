@@ -46,11 +46,11 @@ try {
 function printHelp() {
     console.log(`
 Usage:
-  node src/daemon.js start
-  node src/daemon.js stop
-  node src/daemon.js restart
-  node src/daemon.js status
-  node src/daemon.js run
+  node scripts/daemon.js start
+  node scripts/daemon.js stop
+  node scripts/daemon.js restart
+  node scripts/daemon.js status
+  node scripts/daemon.js run
 `);
 }
 
