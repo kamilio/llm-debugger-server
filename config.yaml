@@ -1,0 +1,61 @@
+port: 3000
+strict_validation: false
+require_auth: false
+token_counting: chars
+embedding_size: 8
+latency_ms: 0
+error_rate: 0.0
+models:
+  echo:
+    - _default:
+        type: "echo"
+
+  weirdo:
+    - _default:
+        type: "message"
+        content: "asdkjhasd kajshd aksjdh..."
+        usage:
+          output: 999999
+
+  thinker:
+    - _default:
+        type: "message"
+        reasoning: "hmm let me think about this... *gibberish*"
+        content: "here is my thoughtful response... *gibberish*"
+
+  coder:
+    - _default:
+        type: "message"
+        reasoning: "I need to read this file first..."
+        tool_calls:
+          - name: "read_file"
+            arguments: { "path": "/src/main.js" }
+
+  gpt-4:
+    - "hello": "Hi there!"
+    - "test error":
+        type: "error"
+        status: 500
+        message: "Internal server error"
+    - "rate limit":
+        type: "error"
+        status: 429
+        message: "Rate limit exceeded"
+    - "load fixture":
+        type: "file"
+        path: fixtures/recorded-response.yaml
+    - _default:
+        type: "echo"
+
+  claude-3-opus:
+    - "think hard":
+        type: "message"
+        reasoning: "Deep thinking happening here..."
+        content: "After careful consideration..."
+        usage:
+          input: 500
+          output: 1000
+          reasoning: 2000
+    - _default:
+        type: "message"
+        content: "I'm Claude, how can I help?"

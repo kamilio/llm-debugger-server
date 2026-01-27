@@ -1,0 +1,48 @@
+timestamp: '2026-01-14T17:43:13.913Z'
+duration_ms: 200
+request:
+  method: POST
+  url: https://api.openai.com/v1/chat/completions
+  headers:
+    content-type: application/json
+    authorization: Bearer...xxx
+  body:
+    model: gpt-4
+    messages:
+      - role: user
+        content: "Hello"
+    stream: true
+response:
+  status: 200
+  headers:
+    content-type: text/event-stream
+  body:
+    - id: chatcmpl-xxx
+      object: chat.completion.chunk
+      created: 1768412589
+      model: gpt-4
+      choices:
+        - index: 0
+          delta:
+            role: assistant
+          finish_reason: null
+    - id: chatcmpl-xxx
+      object: chat.completion.chunk
+      created: 1768412589
+      model: gpt-4
+      choices:
+        - index: 0
+          delta:
+            content: "Hello!"
+          finish_reason: null
+    - id: chatcmpl-xxx
+      object: chat.completion.chunk
+      choices:
+        - delta: {}
+          finish_reason: stop
+      usage:
+        prompt_tokens: 10
+        completion_tokens: 5
+        total_tokens: 15
+    - done: true
+  is_streaming: true

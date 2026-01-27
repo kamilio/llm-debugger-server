@@ -1,0 +1,27 @@
+{
+  "name": "llm-debugger-server",
+  "version": "1.0.0",
+  "description": "Dummy multi-provider AI API server for local testing.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "daemon": "node src/daemon.js",
+    "test": "node --test",
+    "test:unit": "node --test test/unit",
+    "test:integration": "node --test test/integration"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.0"
+  }
+}

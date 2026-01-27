@@ -1,0 +1,6 @@
+rules:
+  - match: "hello"
+    response: "Hello there."
+  - match: "/\\bstatus\\b/i"
+    response: "All systems nominal."
+fallback: "No matching rule."
