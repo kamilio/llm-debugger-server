@@ -89,7 +89,7 @@ const ANTHROPIC_MESSAGE_FIELDS = new Set([
 ]);
 const ANTHROPIC_COUNT_FIELDS = new Set(['model', 'messages']);
 const GEMINI_GENERATE_FIELDS = new Set(['contents', 'generationConfig', 'safetySettings', 'tools', 'toolConfig']);
-const GEMINI_COUNT_FIELDS = new Set(['contents']);
+const GEMINI_COUNT_FIELDS = new Set(['contents', 'generateContentRequest']);
 
 export function createServer(config, { onListen } = {}) {
     const app = express();
@@ -329,16 +329,18 @@ export function createServer(config, { onListen } = {}) {
         res.json({ name: `models/${model}`, displayName: model });
     });
 
-    app.post('/v1beta/models/:model:generateContent', async (req, res) => {
-        await handleGeminiGenerate({ req, res, config });
-    });
-
-    app.post('/v1beta/models/:model:streamGenerateContent', async (req, res) => {
-        await handleGeminiStream({ req, res, config });
-    });
-
-    app.post('/v1beta/models/:model:countTokens', async (req, res) => {
-        await handleGeminiCountTokens({ req, res, config });
+    app.post('/v1beta/models/:modelAction', async (req, res) => {
+        const { model, action } = parseGeminiModelAction(req.params.modelAction);
+        req.params.model = model;
+        if (action === 'generateContent') {
+            await handleGeminiGenerate({ req, res, config });
+        } else if (action === 'streamGenerateContent') {
+            await handleGeminiStream({ req, res, config });
+        } else if (action === 'countTokens') {
+            await handleGeminiCountTokens({ req, res, config });
+        } else {
+            sendError(res, 'gemini', 404, `Unknown action: ${action}`);
+        }
     });
 
     app.use((req, res) => {
@@ -469,7 +471,11 @@ async function handleOpenAIEmbeddings({ req, res, config }) {
 
     const input = body.input;
     const inputs = Array.isArray(input) ? input : [input];
-    const embeddings = inputs.map((item) => generateEmbedding(String(item ?? ''), config.embeddingSize));
+    const rawEmbeddings = inputs.map((item) => generateEmbedding(String(item ?? ''), config.embeddingSize));
+    const encodingFormat = body.encoding_format || 'float';
+    const embeddings = encodingFormat === 'base64'
+        ? rawEmbeddings.map(encodeEmbeddingBase64)
+        : rawEmbeddings;
     const totalInput = inputs.map((item) => String(item ?? ''));
     const usage = { input: combineTokens(totalInput, config.tokenCounting) };
 
@@ -677,7 +683,8 @@ async function handleGeminiCountTokens({ req, res, config }) {
     if (!validateBody(body, GEMINI_COUNT_FIELDS, res, 'gemini', config)) {
         return;
     }
-    const { allText } = extractGeminiText(body.contents || []);
+    const contents = body.contents || body.generateContentRequest?.contents || [];
+    const { allText } = extractGeminiText(contents);
     res.locals.inputSummary = allText || '';
     res.locals.behavior = 'count_tokens';
     await applyDelay(req, config);
@@ -1056,6 +1063,25 @@ function generateEmbedding(text, size) {
         vector.push(Number(value.toFixed(4)));
     }
     return vector;
+}
+
+function encodeEmbeddingBase64(embedding) {
+    const buffer = Buffer.alloc(embedding.length * 4);
+    for (let i = 0; i < embedding.length; i += 1) {
+        buffer.writeFloatLE(embedding[i], i * 4);
+    }
+    return buffer.toString('base64');
+}
+
+function parseGeminiModelAction(modelAction) {
+    const colonIndex = modelAction.indexOf(':');
+    if (colonIndex === -1) {
+        return { model: modelAction, action: '' };
+    }
+    return {
+        model: modelAction.slice(0, colonIndex),
+        action: modelAction.slice(colonIndex + 1),
+    };
 }
 
 function buildAudioUsage(text, config) {
