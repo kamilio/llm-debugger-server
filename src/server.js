@@ -169,31 +169,6 @@ export function createServer(config, { onListen } = {}) {
         res.json({ status: 'ok' });
     });
 
-    app.get('/__viewer__', (req, res) => {
-        const baseUrl = getRequestBaseUrl(req, config);
-        res.type('html').send(`<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <title>LLM Debugger Server</title>
-</head>
-<body>
-  <h1>LLM Debugger Server</h1>
-  <p>Base URL: <code>${baseUrl}</code></p>
-  <p>Bind address: <code>${config.host}:${config.port}</code></p>
-  <ul>
-    <li>Playground: <code>/playground</code></li>
-    <li>Explore: <code>/explore</code></li>
-    <li>OpenAPI: <code>/openapi.json</code> or <code>/openapi.yaml</code></li>
-    <li>Health: <code>/health</code></li>
-    <li>OpenAI: <code>/v1</code></li>
-    <li>Anthropic: <code>/v1</code> with <code>x-provider: anthropic</code></li>
-    <li>Gemini: <code>/v1beta</code></li>
-  </ul>
-</body>
-</html>`);
-    });
-
     app.get('/v1/models', (req, res) => {
         const provider = normalizeProvider(req);
         if (provider === 'anthropic') {
@@ -411,7 +386,6 @@ function listEndpoints(config) {
             'GET /openapi.json',
             'GET /openapi.yaml',
             'GET /health',
-            'GET /__viewer__',
         ],
         openai: [
             'GET /v1/models',

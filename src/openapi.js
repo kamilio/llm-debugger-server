@@ -305,13 +305,6 @@ export function buildOpenApiSpec(config, { serverUrl } = {}) {
                     responses: { 200: jsonResponse() },
                 }),
             },
-            '/__viewer__': {
-                get: openApiOperation({
-                    tags: ['core'],
-                    summary: 'Simple HTML viewer.',
-                    responses: { 200: htmlResponse() },
-                }),
-            },
             '/playground': {
                 get: openApiOperation({
                     tags: ['core'],

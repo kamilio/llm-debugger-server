@@ -85,8 +85,8 @@ async function startDaemon() {
     }
     writePid(pidPath, child.pid);
 
-    const viewerUrl = `http://${ready.host}:${ready.port}/__viewer__`;
-    console.log(`Started llm-debugger on ${viewerUrl} (PID ${child.pid}).`);
+    const baseUrl = `http://${ready.host}:${ready.port}/`;
+    console.log(`Started llm-debugger on ${baseUrl} (PID ${child.pid}).`);
 
     child.disconnect();
     child.unref();
