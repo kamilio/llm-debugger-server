@@ -191,7 +191,7 @@ export function buildAnthropicMessageResponse({ response, model }) {
     const content = [];
 
     if (response.content) {
-        content.push({ type: 'text', text: response.content });
+        content.push({ type: 'text', text: response.content, citations: null });
     }
 
     if (response.reasoning) {
@@ -216,6 +216,7 @@ export function buildAnthropicMessageResponse({ response, model }) {
         model,
         content,
         stop_reason: 'end_turn',
+        stop_sequence: null,
         usage: mapUsageToAnthropic(response.usage),
     };
 }
@@ -353,17 +354,15 @@ export function mapUsageToOpenAIResponses(usage = {}) {
 }
 
 export function mapUsageToAnthropic(usage = {}) {
-    const mapped = {
+    return {
         input_tokens: usage.input ?? 0,
         output_tokens: usage.output ?? 0,
+        cache_creation_input_tokens: usage.cache_creation ?? 0,
+        cache_read_input_tokens: usage.cache_read ?? 0,
+        cache_creation: null,
+        server_tool_use: null,
+        service_tier: null,
     };
-    if (usage.cache_read !== undefined) {
-        mapped.cache_read_input_tokens = usage.cache_read;
-    }
-    if (usage.cache_creation !== undefined) {
-        mapped.cache_creation_input_tokens = usage.cache_creation;
-    }
-    return mapped;
 }
 
 export function mapUsageToGemini(usage = {}) {
