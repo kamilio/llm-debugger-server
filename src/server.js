@@ -496,7 +496,7 @@ async function handleOpenAIChat({ req, res, config }) {
 
     const stream = body.stream === true;
     if (stream) {
-        const includeUsage = body.stream_options?.include_usage === true;
+        const includeUsage = body.stream_options?.include_usage !== false;
         const events = buildOpenAIChatStreamEvents({ response: result.response, model: body.model, includeUsage });
         return streamSse(res, events, calculateDelay(req, config));
     }
