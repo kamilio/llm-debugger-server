@@ -22,7 +22,7 @@ import {
 import { parseMultipart } from './multipart.js';
 import { FileStore } from './file-store.js';
 import { buildOpenApiSpec } from './openapi.js';
-import { buildPlaygroundHtml } from './ui.js';
+import { buildExploreHtml, buildIndexHtml, buildPlaygroundHtml } from './ui.js';
 import {
     extractAnthropicText,
     extractGeminiText,
@@ -99,7 +99,10 @@ export function createServer(config, { onListen } = {}) {
     const fileStore = new FileStore();
     const openApiSpec = buildOpenApiSpec(config);
     const openApiYaml = yaml.dump(openApiSpec, { noRefs: true });
+    const endpointList = listEndpoints(config);
+    const indexHtml = buildIndexHtml({ config, endpoints: endpointList });
     const playgroundHtml = buildPlaygroundHtml();
+    const exploreHtml = buildExploreHtml(config);
 
     app.use(cors({ origin: '*' }));
     app.use(express.json({ limit: '2mb' }));
@@ -134,14 +137,22 @@ export function createServer(config, { onListen } = {}) {
     });
 
     app.get('/', (req, res) => {
-        res.json({
-            name: 'LLM Debugger Server',
-            endpoints: listEndpoints(config),
-        });
+        const wantsJson = req.query.format === 'json' || req.accepts(['html', 'json']) === 'json';
+        if (wantsJson) {
+            return res.json({
+                name: 'LLM Debugger Server',
+                endpoints: endpointList,
+            });
+        }
+        res.type('html').send(indexHtml);
     });
 
     app.get('/playground', (req, res) => {
         res.type('html').send(playgroundHtml);
+    });
+
+    app.get('/explore', (req, res) => {
+        res.type('html').send(exploreHtml);
     });
 
     app.get('/openapi.json', (req, res) => {
@@ -168,6 +179,7 @@ export function createServer(config, { onListen } = {}) {
   <p>Server is running on ${config.host}:${config.port}</p>
   <ul>
     <li>Playground: <code>/playground</code></li>
+    <li>Explore: <code>/explore</code></li>
     <li>OpenAPI: <code>/openapi.json</code> or <code>/openapi.yaml</code></li>
     <li>Health: <code>/health</code></li>
     <li>OpenAI: <code>/v1</code></li>
@@ -391,6 +403,7 @@ function listEndpoints(config) {
         core: [
             'GET /',
             'GET /playground',
+            'GET /explore',
             'GET /openapi.json',
             'GET /openapi.yaml',
             'GET /health',

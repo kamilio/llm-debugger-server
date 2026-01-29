@@ -83,6 +83,16 @@ function htmlResponse() {
     };
 }
 
+function jsonHtmlResponse() {
+    return {
+        description: 'OK',
+        content: {
+            'application/json': { schema: jsonSchema() },
+            'text/html': { schema: textSchema() },
+        },
+    };
+}
+
 function yamlResponse() {
     return {
         description: 'OK',
@@ -282,7 +292,7 @@ export function buildOpenApiSpec(config) {
                 get: openApiOperation({
                     tags: ['core'],
                     summary: 'List available endpoints.',
-                    responses: { 200: jsonResponse() },
+                    responses: { 200: jsonHtmlResponse() },
                 }),
             },
             '/health': {
@@ -303,6 +313,13 @@ export function buildOpenApiSpec(config) {
                 get: openApiOperation({
                     tags: ['core'],
                     summary: 'Streaming playground.',
+                    responses: { 200: htmlResponse() },
+                }),
+            },
+            '/explore': {
+                get: openApiOperation({
+                    tags: ['core'],
+                    summary: 'Config explorer.',
                     responses: { 200: htmlResponse() },
                 }),
             },

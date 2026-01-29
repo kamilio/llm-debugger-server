@@ -1,10 +1,13 @@
+host: 0.0.0.0
 port: 3000
 strict_validation: false
 require_auth: false
+default_behavior: Echo
 token_counting: chars
 embedding_size: 8
 latency_ms: 0
 error_rate: 0.0
+enable_gemini_openai_compat: false
 models:
   echo:
     - _default:
