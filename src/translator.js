@@ -17,9 +17,11 @@ export function buildOpenAIChatResponse({ response, model }) {
                 message: {
                     role: 'assistant',
                     content: response.content ?? '',
+                    refusal: null,
                     ...(response.reasoning ? { reasoning_content: response.reasoning } : {}),
                     ...(toolCalls ? { tool_calls: toolCalls } : {}),
                 },
+                logprobs: null,
                 finish_reason: 'stop',
             },
         ],
@@ -102,6 +104,7 @@ export function buildOpenAICompletionResponse({ text, model, usage }) {
             {
                 index: 0,
                 text,
+                logprobs: null,
                 finish_reason: 'stop',
             },
         ],
