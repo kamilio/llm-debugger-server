@@ -96,11 +96,9 @@ const GEMINI_COUNT_FIELDS = new Set(['contents', 'generateContentRequest']);
 
 export function createServer(config, { onListen } = {}) {
     const app = express();
+    app.set('trust proxy', true);
     const fileStore = new FileStore();
-    const openApiSpec = buildOpenApiSpec(config);
-    const openApiYaml = yaml.dump(openApiSpec, { noRefs: true });
     const endpointList = listEndpoints(config);
-    const indexHtml = buildIndexHtml({ config, endpoints: endpointList });
     const playgroundHtml = buildPlaygroundHtml();
     const exploreHtml = buildExploreHtml(config);
 
@@ -144,7 +142,8 @@ export function createServer(config, { onListen } = {}) {
                 endpoints: endpointList,
             });
         }
-        res.type('html').send(indexHtml);
+        const baseUrl = getRequestBaseUrl(req, config);
+        res.type('html').send(buildIndexHtml({ config, endpoints: endpointList, baseUrl }));
     });
 
     app.get('/playground', (req, res) => {
@@ -156,11 +155,14 @@ export function createServer(config, { onListen } = {}) {
     });
 
     app.get('/openapi.json', (req, res) => {
-        res.json(openApiSpec);
+        const baseUrl = getRequestBaseUrl(req, config);
+        res.json(buildOpenApiSpec(config, { serverUrl: baseUrl }));
     });
 
     app.get('/openapi.yaml', (req, res) => {
-        res.type('application/yaml').send(openApiYaml);
+        const baseUrl = getRequestBaseUrl(req, config);
+        const openApiSpec = buildOpenApiSpec(config, { serverUrl: baseUrl });
+        res.type('application/yaml').send(yaml.dump(openApiSpec, { noRefs: true }));
     });
 
     app.get('/health', (req, res) => {
@@ -168,6 +170,7 @@ export function createServer(config, { onListen } = {}) {
     });
 
     app.get('/__viewer__', (req, res) => {
+        const baseUrl = getRequestBaseUrl(req, config);
         res.type('html').send(`<!doctype html>
 <html>
 <head>
@@ -176,7 +179,8 @@ export function createServer(config, { onListen } = {}) {
 </head>
 <body>
   <h1>LLM Debugger Server</h1>
-  <p>Server is running on ${config.host}:${config.port}</p>
+  <p>Base URL: <code>${baseUrl}</code></p>
+  <p>Bind address: <code>${config.host}:${config.port}</code></p>
   <ul>
     <li>Playground: <code>/playground</code></li>
     <li>Explore: <code>/explore</code></li>
@@ -464,6 +468,18 @@ function listEndpoints(config) {
     }
 
     return endpoints;
+}
+
+function getRequestBaseUrl(req, config) {
+    const forwardedProto = normalizeHeaderValue(req.headers['x-forwarded-proto']);
+    const forwardedHost = normalizeHeaderValue(req.headers['x-forwarded-host']);
+    const protocol = forwardedProto ? String(forwardedProto).split(',')[0].trim() : req.protocol;
+    const host = forwardedHost ? String(forwardedHost).split(',')[0].trim() : req.get('host');
+
+    if (!protocol || !host) {
+        return `http://${config.host}:${config.port}`;
+    }
+    return `${protocol}://${host}`;
 }
 
 async function handleOpenAIChat({ req, res, config }) {

@@ -269,7 +269,7 @@ function buildOpenAiCompatPaths(prefix) {
     };
 }
 
-export function buildOpenApiSpec(config) {
+export function buildOpenApiSpec(config, { serverUrl } = {}) {
     const spec = {
         openapi: OPENAPI_VERSION,
         info: {
@@ -277,15 +277,18 @@ export function buildOpenApiSpec(config) {
             version: API_VERSION,
             description: 'Dummy multi-provider AI API server for local testing.',
         },
-        servers: [
-            {
-                url: 'http://{host}:{port}',
-                variables: {
-                    host: { default: config.host },
-                    port: { default: String(config.port) },
-                },
-            },
-        ],
+        servers:
+            serverUrl
+                ? [{ url: serverUrl }]
+                : [
+                    {
+                        url: 'http://{host}:{port}',
+                        variables: {
+                            host: { default: config.host },
+                            port: { default: String(config.port) },
+                        },
+                    },
+                ],
         tags: TAGS,
         paths: {
             '/': {

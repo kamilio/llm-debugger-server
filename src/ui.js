@@ -702,8 +702,8 @@ function escapeHtml(value) {
         .replace(/'/g, '&#39;');
 }
 
-export function buildIndexHtml({ config, endpoints }) {
-    const baseUrl = `http://${config?.host ?? 'localhost'}:${config?.port ?? ''}`;
+export function buildIndexHtml({ config, endpoints, baseUrl }) {
+    const resolvedBaseUrl = baseUrl || `http://${config?.host ?? 'localhost'}:${config?.port ?? ''}`;
     const endpointGroups = endpoints && typeof endpoints === 'object' ? endpoints : {};
     const groupLabels = {
         core: 'Core',
@@ -941,7 +941,7 @@ export function buildIndexHtml({ config, endpoints }) {
     <header class="hero">
       <div>
         <h1>LLM Debugger Server</h1>
-        <p>Base URL: <code>${escapeHtml(baseUrl)}</code></p>
+        <p>Base URL: <code>${escapeHtml(resolvedBaseUrl)}</code></p>
       </div>
       <div class="actions">
         <a href="/playground">Playground</a>
