@@ -21,14 +21,14 @@
     "busboy": "^1.6.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "js-yaml": "^4.1.1"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@google/generative-ai": "^0.24.1",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
-    "js-yaml": "^4.1.1",
     "openai": "^6.16.0"
   }
 }
